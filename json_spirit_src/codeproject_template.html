@@ -1,0 +1,241 @@
+<!--------------------------------------------------------------------------->  
+<!--                           INTRODUCTION                                
+
+ The Code Project article submission template (HTML version)
+
+Using this template will help us post your article sooner. To use, just 
+follow the 3 easy steps below:
+ 
+     1. Fill in the article description details
+     2. Add links to your images and downloads
+     3. Include the main article text
+
+That's all there is to it! All formatting will be done by our submission
+scripts and style sheets. 
+
+-->  
+<!--------------------------------------------------------------------------->  
+<!--                        IGNORE THIS SECTION                            -->
+<html>
+<head>
+<title>The Code Project</title>
+<Style>
+BODY, P, TD { font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 10pt }
+H2,H3,H4,H5 { color: #ff9900; font-weight: bold; }
+H2 { font-size: 13pt; }
+H3 { font-size: 12pt; }
+H4 { font-size: 10pt; color: black; }
+PRE { BACKGROUND-COLOR: #FBEDBB; FONT-FAMILY: "Courier New", Courier, mono; WHITE-SPACE: pre; }
+CODE { COLOR: #990000; FONT-FAMILY: "Courier New", Courier, mono; }
+</style>
+<!link rel="stylesheet" type=text/css href="http://www.codeproject.com/styles/global.css">
+</head>
+<body bgcolor="#FFFFFF" color=#000000>
+<!--------------------------------------------------------------------------->  
+
+
+<!-------------------------------     STEP 1      --------------------------->
+<!--  Fill in the details (CodeProject will reformat this section for you) -->
+
+<pre>
+Title:       JSON Spirit - a C++ JSON parser/generator implemented with Boost Spirit
+Author:      John W. Wilkinson 
+Email:       john.wilk161c5@googlemail.com
+Member ID:   4393813
+Language:    C++
+Platform:    platform independent
+Technology:  boost::spirit
+Level:       intermediate
+Description: A C++ JSON parser/generator written using boost::spirit
+Section      C++ / MFC
+SubSection   Parsers
+</pre>
+
+<!-------------------------------     STEP 2      --------------------------->
+<!--  Include download and sample image information.                       --> 
+
+<ul class=download>
+<li><a href="json_spirit_src.zip">Download source - 24 Kb</a></li>
+</ul>
+
+<!-------------------------------     STEP 3      --------------------------->
+<!--  Add the article text. Please use simple formatting (<h2>, <p> etc)   --> 
+
+<h2>Introduction</h2>
+
+<p><a href="http://www.json.org">JSON</a> is an ASCII file format similar to XML but less verbose. 
+It has been described as XML lite. 
+JSON Spirit is a C++ library that reads and writes JSON files or streams. 
+It is written using the <a href="http://www.boost.org/libs/spirit/doc/introduction.html">Boost Spirit</a> parser generator.
+If you are already using Boost then you can use JSON Spirit without any additional dependencies.
+
+<p>The JSON Spirit source code is available as a MSVC 2005 'solution'. 
+However JSON Spirit should compile and work on any platform compatible with Boost. 
+JSON Spirit has been build and tested with MSVC 2005 and Bloodshed Dev-C++ version 4.9.9.2.
+It has been tested with Boost versions 1.33.1, 1.34.0 and 1.34.1. 
+
+<p>The MSVC solution consists a three projects;
+the JSON Spirit library, a small program demonstrating how to use JSON Spirit, and an application containing the library's unit tests.
+
+<h2>Using the code</h2>
+
+<p>The MSVC library project builds an object library. 
+You can link to this object library or alternatively you can add the JSON Spirit source files to your project.
+
+<p>All JSON Spirit declarations are in the namespace <code>json_spirit</code>. 
+
+<h3>Reading JSON</h3>
+
+<p>You can read JSON data from a stream or a string:
+
+<pre>
+    bool read( const std::string& s, Value& value );
+    bool read( std::istream& is,     Value& value );
+</pre>
+
+For example:
+
+<pre>
+    ifstream is( "json.txt" );
+
+    Value value;
+
+    read( is, value );
+</pre>
+
+A JSON value can hold either an JSON array, JSON object, string, integer, double, bool or null.
+The interface of the JSON Spirit <code>Value</code> class is:
+
+<pre>
+    enum Value_type{ obj_type, array_type, str_type, bool_type, int_type, real_type, null_type };
+
+    class Value
+    {
+    public:
+
+        Value();  // creates null value
+        Value( const char*        value );
+        Value( const std::string& value );
+        Value( const Object&      value );
+        Value( const Array&       value );
+        Value( bool               value );
+        Value( int                value );
+        Value( double             value );
+
+        bool operator==( const Value& lhs ) const;
+
+        Value_type type() const;
+
+        const std::string& get_str()   const;
+        const Object&      get_obj()   const;
+        const Array&       get_array() const;
+        bool               get_bool()  const;
+        int                get_int()   const;
+        double             get_real()  const;
+
+        Object& get_obj();
+        Array&  get_array();
+
+        static const Value null;
+	
+    private:
+	
+        ...
+		
+    };
+</pre>
+
+<p>You obtain the value's type by calling <code>Value::type()</code>. 
+You can then call the appropriate getter function.
+Generally you will know a file's format so you will know what type the values in a file should have.
+
+<p>A <code>Value</code> read from a file or stream will contain an <code>Array</code> or an <code>Object</code>. 
+An <code>Array</code> is a <code>std::vector</code> of values, and an <code>Object</code> is a <code>std::vector</code> of JSON pairs.
+
+<pre>
+    typedef std::vector< Pair > Object;
+    typedef std::vector< Value > Array;
+</pre>
+
+A <code>Pair</code> is a struct that holds an <code>std::string</code> and a <code>Value</code>.
+
+<pre>
+    struct Pair
+    {
+        Pair( const std::string& name, const Value& value );
+
+        bool operator==( const Pair& lhs ) const;
+
+        std::string name_;
+        Value value_;
+    };
+</pre>
+
+<p>As JSON arrays and object can themselves contain other arrays or objects a hierarchical tree structure is be formed.
+
+<h3>Writing JSON</h3>
+
+<p>To output JSON first create a <code>Value</code> object containing your data.
+Then write the created <code>Value</code> to a stream or a string. 
+There are two versions of each function. One that outputs the JSON data without any whitespace.
+The other formats the data adding whitespace and line breaks,
+
+<pre>
+    void        write          ( const Value& value, std::ostream& os );
+    void        write_formatted( const Value& value, std::ostream& os );
+    std::string write          ( const Value& value );
+    std::string write_formatted( const Value& value );
+</pre>
+
+The following example shows how to create a small JSON file containing an object with three members:
+
+<pre>
+    Object addr_obj;
+
+    addr_obj.push_back( Pair( "house_number", 42 ) );
+    addr_obj.push_back( Pair( "road",         "East Street" ) );
+    addr_obj.push_back( Pair( "town",         "Newtown" ) );
+
+    ofstream os( "address.txt" );
+
+    write_formatted( addr_obj, os );
+
+    os.close();
+</pre>
+
+<p>The object <code>addr_obj</code> is automatically converted to a <code>Value</code> as it is passed to <code>write_formatted</code>. 
+<p>The file address.txt will contain:
+
+<pre>
+{
+    "house_number" : 42,
+    "road" : "East Street",
+    "town" : "Newtown"
+}
+</pre>
+
+
+<h3>Include files</h3>
+
+<p>To read JSON files you will need to include <code>json_spirit_reader.h</code> and <code>json_spirit_value.h</code>. 
+To generate JSON files you will need to include <code>json_spirit_writer.h</code> and <code>json_spirit_value.h</code>. 
+Alternatively you can include <code>json_spirit.h</code>. 
+This include all three of the above.
+ 
+<h2>Points of Interest</h2>
+
+<p>About a month ago I decided to use JSON for a hobby project. 
+The <a href="http://www.json.org">JSON</a> website listed three C++ implementations.
+After a cursory look at each I discovered that the one I preferred, <a href="http://www.gnu.org/software/flex/">Jaula</a>, used <a href="http://morongo.homelinux.net/jaula/">Flex</a> to do its lexical analysis.
+I would prefer my project not to depend on too may external libraries so, as I was already using Boost, I thought I would write my own JSON parser using Boost Spirit.
+
+<p>Since then another C++ parser implementation has appear on the JSON website. The new one, <a href="http://ddsbench.svn.sourceforge.net/viewvc/ddsbench/trunk/jost/>JOST</a>, also uses Boost Spirit!
+There are however considerable differences between JSON Spirit and JOST in both design and implementation.
+
+<h2>History</h2>
+
+<p> 10th August 2007, Version 1.0, 
+
+<!-------------------------------    That's it!   --------------------------->
+</body>
+</html>
